@@ -1,0 +1,575 @@
+{
+  "name": "A2P 10DLC Registration → GoHighLevel",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "node-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-api-key",
+              "name": "ghlApiKey",
+              "value": "YOUR_GHL_AGENCY_API_KEY",
+              "type": "string"
+            },
+            {
+              "id": "cfg-location-id",
+              "name": "locationId",
+              "value": "YOUR_LOCATION_ID",
+              "type": "string"
+            },
+            {
+              "id": "cfg-company-name",
+              "name": "companyName",
+              "value": "Your Business Legal Name",
+              "type": "string"
+            },
+            {
+              "id": "cfg-ein",
+              "name": "ein",
+              "value": "12-3456789",
+              "type": "string"
+            },
+            {
+              "id": "cfg-entity-type",
+              "name": "entityType",
+              "value": "PRIVATE_PROFIT",
+              "type": "string"
+            },
+            {
+              "id": "cfg-street",
+              "name": "street",
+              "value": "123 Main Street",
+              "type": "string"
+            },
+            {
+              "id": "cfg-city",
+              "name": "city",
+              "value": "New York",
+              "type": "string"
+            },
+            {
+              "id": "cfg-state",
+              "name": "state",
+              "value": "NY",
+              "type": "string"
+            },
+            {
+              "id": "cfg-postal",
+              "name": "postalCode",
+              "value": "10001",
+              "type": "string"
+            },
+            {
+              "id": "cfg-country",
+              "name": "country",
+              "value": "US",
+              "type": "string"
+            },
+            {
+              "id": "cfg-email",
+              "name": "email",
+              "value": "your@company.com",
+              "type": "string"
+            },
+            {
+              "id": "cfg-phone",
+              "name": "phone",
+              "value": "+12125551234",
+              "type": "string"
+            },
+            {
+              "id": "cfg-website",
+              "name": "website",
+              "value": "https://yourcompany.com",
+              "type": "string"
+            },
+            {
+              "id": "cfg-vertical",
+              "name": "vertical",
+              "value": "PROFESSIONAL",
+              "type": "string"
+            },
+            {
+              "id": "cfg-usecase",
+              "name": "campaignUsecase",
+              "value": "MIXED",
+              "type": "string"
+            },
+            {
+              "id": "cfg-desc",
+              "name": "campaignDescription",
+              "value": "We send appointment reminders, follow-up messages, and promotional offers to our opted-in customers.",
+              "type": "string"
+            },
+            {
+              "id": "cfg-sample1",
+              "name": "sampleMessage1",
+              "value": "Hi [Name], your appointment is confirmed for [Date] at [Time]. Reply STOP to opt out.",
+              "type": "string"
+            },
+            {
+              "id": "cfg-sample2",
+              "name": "sampleMessage2",
+              "value": "Thank you for your interest! Here is the info you requested: [link]. Reply STOP to unsubscribe.",
+              "type": "string"
+            },
+            {
+              "id": "cfg-optin-msg",
+              "name": "optinMessage",
+              "value": "Customers opt-in via our website form at [website]/contact. They check a box agreeing to receive SMS messages.",
+              "type": "string"
+            },
+            {
+              "id": "cfg-phone-number",
+              "name": "phoneNumberToAssign",
+              "value": "+12125559876",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-config",
+      "name": "Set A2P Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://services.leadconnectorhq.com/lc-phone/brand",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"locationId\": \"{{ $json.locationId }}\",\n  \"companyName\": \"{{ $json.companyName }}\",\n  \"ein\": \"{{ $json.ein }}\",\n  \"entityType\": \"{{ $json.entityType }}\",\n  \"street\": \"{{ $json.street }}\",\n  \"city\": \"{{ $json.city }}\",\n  \"state\": \"{{ $json.state }}\",\n  \"postalCode\": \"{{ $json.postalCode }}\",\n  \"country\": \"{{ $json.country }}\",\n  \"email\": \"{{ $json.email }}\",\n  \"phone\": \"{{ $json.phone }}\",\n  \"website\": \"{{ $json.website }}\",\n  \"vertical\": \"{{ $json.vertical }}\"\n}",
+        "options": {}
+      },
+      "id": "node-register-brand",
+      "name": "Step 1 - Register A2P Brand",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [700, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ghl-cred",
+          "name": "GoHighLevel API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "brand-id-check",
+              "leftValue": "={{ $json.brandId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node-check-brand",
+      "name": "Brand Created?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "save-brand-id",
+              "name": "brandId",
+              "value": "={{ $json.brandId }}",
+              "type": "string"
+            },
+            {
+              "id": "save-brand-status",
+              "name": "brandStatus",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "save-brand-msg",
+              "name": "message",
+              "value": "=Brand registered successfully! Brand ID: {{ $json.brandId }}. Status: {{ $json.status }}. NOTE: Brand verification may take 1-5 business days. Run Step 2 only after brand is VERIFIED.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-save-brand",
+      "name": "Save Brand ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1220, 200]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://services.leadconnectorhq.com/lc-phone/brand/{{ $('Step 1 - Register A2P Brand').first().json.brandId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-check-brand-status",
+      "name": "Step 1b - Check Brand Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1220, 340],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ghl-cred",
+          "name": "GoHighLevel API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://services.leadconnectorhq.com/lc-phone/campaign",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"locationId\": \"{{ $('Set A2P Config').first().json.locationId }}\",\n  \"brandId\": \"PASTE_YOUR_BRAND_ID_HERE\",\n  \"usecase\": \"{{ $('Set A2P Config').first().json.campaignUsecase }}\",\n  \"description\": \"{{ $('Set A2P Config').first().json.campaignDescription }}\",\n  \"messageFlow\": \"{{ $('Set A2P Config').first().json.optinMessage }}\",\n  \"sample1\": \"{{ $('Set A2P Config').first().json.sampleMessage1 }}\",\n  \"sample2\": \"{{ $('Set A2P Config').first().json.sampleMessage2 }}\",\n  \"embeddedLink\": true,\n  \"embeddedPhone\": false,\n  \"numberPool\": false,\n  \"ageGated\": false,\n  \"directLending\": false,\n  \"subscriberOptin\": true,\n  \"subscriberOptout\": true,\n  \"subscriberHelp\": true,\n  \"affiliateMarketing\": false\n}",
+        "options": {}
+      },
+      "id": "node-register-campaign",
+      "name": "Step 2 - Register A2P Campaign",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [700, 560],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ghl-cred",
+          "name": "GoHighLevel API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "campaign-id-check",
+              "leftValue": "={{ $json.campaignId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node-check-campaign",
+      "name": "Campaign Created?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [960, 560]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "save-campaign-id",
+              "name": "campaignId",
+              "value": "={{ $json.campaignId }}",
+              "type": "string"
+            },
+            {
+              "id": "save-campaign-status",
+              "name": "campaignStatus",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "save-campaign-msg",
+              "name": "message",
+              "value": "=Campaign registered! Campaign ID: {{ $json.campaignId }}. Status: {{ $json.status }}. NOTE: Campaign approval may take 3-7 business days. Run Step 3 only after campaign is APPROVED.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-save-campaign",
+      "name": "Save Campaign ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1220, 460]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://services.leadconnectorhq.com/lc-phone/campaign/PASTE_YOUR_CAMPAIGN_ID_HERE/number",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"locationId\": \"{{ $('Set A2P Config').first().json.locationId }}\",\n  \"phoneNumber\": \"{{ $('Set A2P Config').first().json.phoneNumberToAssign }}\"\n}",
+        "options": {}
+      },
+      "id": "node-assign-number",
+      "name": "Step 3 - Assign Phone Number to Campaign",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [700, 820],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ghl-cred",
+          "name": "GoHighLevel API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "final-msg",
+              "name": "result",
+              "value": "=A2P Registration Complete! Phone number {{ $('Set A2P Config').first().json.phoneNumberToAssign }} has been assigned to the campaign. SMS is now A2P compliant.",
+              "type": "string"
+            },
+            {
+              "id": "final-status",
+              "name": "status",
+              "value": "SUCCESS",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-success",
+      "name": "A2P Registration Complete",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [960, 820]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "brand-err",
+              "name": "error",
+              "value": "=Brand registration failed. Response: {{ JSON.stringify($json) }}. Check your EIN, business name, and API credentials.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-brand-error",
+      "name": "Brand Registration Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1220, 460]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "campaign-err",
+              "name": "error",
+              "value": "=Campaign registration failed. Response: {{ JSON.stringify($json) }}. Ensure your brandId is correct and the brand is VERIFIED before registering a campaign.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-campaign-error",
+      "name": "Campaign Registration Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1220, 660]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set A2P Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set A2P Config": {
+      "main": [
+        [
+          {
+            "node": "Step 1 - Register A2P Brand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 1 - Register A2P Brand": {
+      "main": [
+        [
+          {
+            "node": "Brand Created?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brand Created?": {
+      "main": [
+        [
+          {
+            "node": "Save Brand ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Brand Registration Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 2 - Register A2P Campaign": {
+      "main": [
+        [
+          {
+            "node": "Campaign Created?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign Created?": {
+      "main": [
+        [
+          {
+            "node": "Save Campaign ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Campaign Registration Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 3 - Assign Phone Number to Campaign": {
+      "main": [
+        [
+          {
+            "node": "A2P Registration Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "meta": {
+    "instanceId": ""
+  }
+}
