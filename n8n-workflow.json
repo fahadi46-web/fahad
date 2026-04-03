@@ -1,0 +1,161 @@
+{
+  "name": "ChatGPT Contact Summarizer → GoHighLevel Notes",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ghl-contact-summary",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "GoHighLevel Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [200, 300],
+      "webhookId": "ghl-contact-summary"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"max_tokens\": 400,\n  \"temperature\": 0.4,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a CRM assistant. Summarize the contact information provided in 2-3 concise sentences. Highlight who they are, their contact details, and any notable tags or attributes. Be professional and direct.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Please summarize this GoHighLevel contact:\\n\\nName: {{ $json.body.firstName || '' }} {{ $json.body.lastName || '' }}\\nEmail: {{ $json.body.email || 'N/A' }}\\nPhone: {{ $json.body.phone || 'N/A' }}\\nCompany: {{ $json.body.companyName || 'N/A' }}\\nTags: {{ ($json.body.tags || []).join(', ') || 'None' }}\\nCity: {{ $json.body.city || 'N/A' }}\\nState: {{ $json.body.state || 'N/A' }}\\nCountry: {{ $json.body.country || 'N/A' }}\\nSource: {{ $json.body.source || 'Unknown' }}\\nType: {{ $json.body.type || 'lead' }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "node-openai",
+      "name": "ChatGPT - Summarize Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "openai-cred",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rest.gohighlevel.com/v1/contacts/{{ $('GoHighLevel Webhook').first().json.body.id }}/notes/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "body",
+              "value": "=[AI Summary - {{ $now.toFormat('yyyy-MM-dd HH:mm') }}]\n{{ $json.choices[0].message.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-ghl-note",
+      "name": "Add Note to GHL Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [720, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ghl-cred",
+          "name": "GoHighLevel API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"success\", \"message\": \"Contact summary saved to GoHighLevel notes.\" }",
+        "options": {}
+      },
+      "id": "node-respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [980, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"error\", \"message\": \"Something went wrong. Check n8n execution logs.\" }",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "node-error",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [720, 500]
+    }
+  ],
+  "connections": {
+    "GoHighLevel Webhook": {
+      "main": [
+        [
+          {
+            "node": "ChatGPT - Summarize Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ChatGPT - Summarize Contact": {
+      "main": [
+        [
+          {
+            "node": "Add Note to GHL Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Note to GHL Contact": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "meta": {
+    "instanceId": ""
+  }
+}
