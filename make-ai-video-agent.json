@@ -3,176 +3,149 @@
   "flow": [
     {
       "id": 1,
-      "module": "clock:Clock",
+      "module": "openai-gpt-3:CreateCompletion",
       "version": 1,
       "parameters": {
-        "interval": 1440,
-        "unit": "minute",
-        "type": "time",
-        "time": "09:00"
-      },
-      "mapper": {},
-      "metadata": {
-        "designer": { "x": 0, "y": 0 },
-        "restore": {},
-        "notes": "Runs once daily at 9:00 AM. Adjust the 'time' field to your preferred upload time."
-      }
-    },
-    {
-      "id": 2,
-      "module": "openai:CreateChatCompletion",
-      "version": 1,
-      "parameters": {
-        "connectionId": "YOUR_OPENAI_CONNECTION_ID"
+        "__IMTCONN__": "YOUR_OPENAI_CONNECTION_ID"
       },
       "mapper": {
-        "model": "gpt-4o-mini",
-        "temperature": 0.8,
-        "max_tokens": 1200,
-        "response_format": { "type": "json_object" },
+        "model": "gpt-4o",
+        "select": "chat",
+        "max_tokens": 2048,
+        "temperature": 0.9,
         "messages": [
           {
             "role": "system",
-            "content": "You are an expert YouTube content strategist and scriptwriter. Always respond with valid JSON only."
+            "content": "You are a YouTube content creator specializing in tech tips and AI news. You create engaging, concise video scripts that work well with AI avatar presenters. Keep scripts under 2 minutes of speaking time (~300 words). Be energetic and conversational."
           },
           {
             "role": "user",
-            "content": "Generate a complete YouTube video concept for today ({{formatDate(now; 'YYYY-MM-DD')}}). Return a JSON object with these exact keys:\n- title: engaging YouTube title (max 70 chars)\n- description: full YouTube description (250-350 words) with relevant hashtags at the end\n- tags: array of 10-15 SEO keyword tags (strings)\n- script: full video narration script (500-700 words), divided into intro, main_points (array of 3 sections), and outro\n- thumbnail_text: short punchy text for the thumbnail overlay (max 6 words)\n- category: YouTube category name (e.g. Education, HowTo, Entertainment)\nPick a trending, high-interest topic suitable for a short-form informational video."
+            "content": "Create a new YouTube video about tech tips and AI news. Pick a specific trending or evergreen topic. Respond in EXACTLY this format:\n\nTITLE: <catchy YouTube title under 70 chars>\n\nDESCRIPTION: <YouTube description, 2-3 sentences with keywords>\n\nTAGS: <comma-separated tags, 5-8 tags>\n\nSCRIPT:\n<the full spoken script for the AI avatar, no stage directions>"
           }
         ]
       },
       "metadata": {
-        "designer": { "x": 220, "y": 0 },
-        "notes": "Generates title, description, tags, script, and thumbnail text via ChatGPT. Requires an OpenAI connection in make.com."
+        "designer": { "x": 0, "y": 0 },
+        "notes": "ChatGPT generates the script, title, description, and tags in plain text format."
+      }
+    },
+    {
+      "id": 2,
+      "module": "heygen:createAnAvatarVideoV2",
+      "version": 1,
+      "parameters": {
+        "__IMTCONN__": "YOUR_HEYGEN_CONNECTION_ID"
+      },
+      "mapper": {
+        "test": false,
+        "title": "AI Generated Video",
+        "dimension": {
+          "width": "1080",
+          "height": "1920"
+        },
+        "video_inputs": [
+          {
+            "voice": {
+              "type": "text",
+              "speed": "1",
+              "emotion": "Soothing",
+              "voice_id": "YOUR_HEYGEN_VOICE_ID",
+              "input_text": "{{1.result}}"
+            },
+            "character": {
+              "type": "avatar",
+              "scale": "1",
+              "offset": {},
+              "matting": false,
+              "avatar_id": "YOUR_HEYGEN_AVATAR_ID",
+              "avatar_style": "normal"
+            },
+            "background": {
+              "type": "color",
+              "value": "#f6f6fc"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "designer": { "x": 300, "y": 0 },
+        "notes": "Creates a HeyGen AI avatar video using the script from module 1. Set your avatar ID and voice ID from your HeyGen account."
       }
     },
     {
       "id": 3,
-      "module": "json:ParseJSON",
+      "module": "util:FunctionSleep",
       "version": 1,
       "parameters": {},
       "mapper": {
-        "string": "{{2.choices[].message.content}}"
+        "duration": "300"
       },
       "metadata": {
-        "designer": { "x": 440, "y": 0 },
-        "notes": "Parses the JSON string returned by OpenAI into individual fields usable by later modules."
+        "designer": { "x": 500, "y": 0 },
+        "notes": "Waits 5 minutes (300s max) for HeyGen to render the video. HeyGen can take 5-15 min. If your video often isn't ready, run the scenario again manually after waiting longer."
       }
     },
     {
       "id": 4,
-      "module": "http:ActionSendData",
-      "version": 3,
+      "module": "heygen:getVideo",
+      "version": 1,
       "parameters": {
-        "handleErrors": true
+        "__IMTCONN__": "YOUR_HEYGEN_CONNECTION_ID"
       },
       "mapper": {
-        "url": "https://api.pictory.ai/pictoryapis/v1/video/storyboard",
-        "method": "POST",
-        "headers": [
-          { "name": "Authorization", "value": "Bearer YOUR_PICTORY_API_KEY" },
-          { "name": "Content-Type", "value": "application/json" },
-          { "name": "X-Pictory-User-Id", "value": "YOUR_PICTORY_USER_ID" }
-        ],
-        "bodyType": "raw",
-        "contentType": "application/json",
-        "body": "={\"videoName\": \"{{3.title}}\", \"videoDescription\": \"{{3.description}}\", \"language\": \"en\", \"webhook\": \"\", \"scenes\": [{\"text\": \"{{3.script.intro}}\", \"voiceOver\": true, \"splitTextOnNewLine\": true, \"splitTextOnPeriod\": true}, {\"text\": \"{{join(3.script.main_points; \" \")}}\", \"voiceOver\": true, \"splitTextOnNewLine\": true, \"splitTextOnPeriod\": true}, {\"text\": \"{{3.script.outro}}\", \"voiceOver\": true, \"splitTextOnNewLine\": true, \"splitTextOnPeriod\": true}], \"brandLogo\": {\"url\": \"\", \"verticalAlignment\": \"bottom\", \"horizontalAlignment\": \"right\"}}"
+        "video_id": "{{2.video_id}}"
       },
       "metadata": {
-        "designer": { "x": 660, "y": 0 },
-        "notes": "Submits the AI-generated script to Pictory to create the video. Replace API key and User ID with your Pictory credentials. Swap this module's URL/headers to use D-ID, Synthesia, or any other video API."
+        "designer": { "x": 700, "y": 0 },
+        "notes": "Fetches the video status from HeyGen. Returns video_url when ready, null when still processing."
       }
     },
     {
       "id": 5,
-      "module": "tools:Sleep",
-      "version": 1,
+      "module": "http:ActionGetFile",
+      "version": 3,
       "parameters": {},
+      "filter": {
+        "name": "Video Ready",
+        "conditions": [
+          [
+            {
+              "a": "{{4.data.video_url}}",
+              "o": "exist"
+            }
+          ]
+        ]
+      },
       "mapper": {
-        "delay": 180
+        "url": "{{4.data.video_url}}",
+        "serializeUrl": false,
+        "shareCookies": false
       },
       "metadata": {
-        "designer": { "x": 880, "y": 0 },
-        "notes": "Waits 3 minutes for the video generation job to complete. Increase if your videos take longer (e.g., 300 for 5 minutes)."
+        "designer": { "x": 900, "y": 0 },
+        "notes": "Downloads the rendered video. The filter prevents execution if video_url is still null (video still processing) — this is the fix for the BundleValidationError."
       }
     },
     {
       "id": 6,
-      "module": "http:ActionSendData",
-      "version": 3,
+      "module": "youtube:uploadVideo",
+      "version": 4,
       "parameters": {
-        "handleErrors": true
+        "__IMTCONN__": "YOUR_YOUTUBE_CONNECTION_ID"
       },
       "mapper": {
-        "url": "https://api.pictory.ai/pictoryapis/v1/jobs/{{4.jobId}}",
-        "method": "GET",
-        "headers": [
-          { "name": "Authorization", "value": "Bearer YOUR_PICTORY_API_KEY" },
-          { "name": "X-Pictory-User-Id", "value": "YOUR_PICTORY_USER_ID" }
-        ]
+        "data": "{{5.data}}",
+        "title": "AI Generated Video",
+        "fileName": "ai_video.mp4",
+        "categoryId": "28",
+        "description": "Generated with AI",
+        "madeForKids": false,
+        "privacyStatus": "public",
+        "syntheticMedia": true
       },
       "metadata": {
-        "designer": { "x": 1100, "y": 0 },
-        "notes": "Polls Pictory for the completed video URL using the job ID returned in step 4. Adjust the endpoint path for other video APIs."
-      }
-    },
-    {
-      "id": 7,
-      "module": "http:ActionGetFile",
-      "version": 3,
-      "parameters": {
-        "handleErrors": true
-      },
-      "mapper": {
-        "url": "{{6.data.videoURL}}",
-        "method": "GET"
-      },
-      "metadata": {
-        "designer": { "x": 1320, "y": 0 },
-        "notes": "Downloads the rendered video file from Pictory's CDN as a binary file for upload to YouTube."
-      }
-    },
-    {
-      "id": 8,
-      "module": "youtube:UploadVideo",
-      "version": 1,
-      "parameters": {
-        "connectionId": "YOUR_YOUTUBE_CONNECTION_ID"
-      },
-      "mapper": {
-        "file": "{{7.data}}",
-        "snippet": {
-          "title": "{{3.title}}",
-          "description": "{{3.description}}",
-          "tags": "{{3.tags}}",
-          "categoryId": "27",
-          "defaultLanguage": "en"
-        },
-        "status": {
-          "privacyStatus": "public",
-          "selfDeclaredMadeForKids": false
-        },
-        "notifySubscribers": true
-      },
-      "metadata": {
-        "designer": { "x": 1540, "y": 0 },
-        "notes": "Uploads the video to YouTube with AI-generated title, description, and tags. categoryId 27 = Education. Change to: 24=Entertainment, 26=HowTo, 28=Science&Tech, 22=People&Blogs."
-      }
-    },
-    {
-      "id": 9,
-      "module": "slack:CreateMessage",
-      "version": 1,
-      "parameters": {
-        "connectionId": "YOUR_SLACK_CONNECTION_ID"
-      },
-      "mapper": {
-        "channel": "#youtube-uploads",
-        "text": ":clapper: *New video uploaded!*\n*Title:* {{3.title}}\n*YouTube URL:* https://youtube.com/watch?v={{8.id}}\n*Tags:* {{join(3.tags; ', ')}}\n*Uploaded:* {{formatDate(now; 'MMMM D, YYYY [at] h:mm A')}}"
-      },
-      "metadata": {
-        "designer": { "x": 1760, "y": 0 },
-        "notes": "Optional: posts a Slack notification when the upload succeeds. Remove this module if you don't use Slack, or swap for Gmail, Telegram, Discord, etc."
+        "designer": { "x": 1200, "y": 0 },
+        "notes": "Uploads to YouTube. categoryId 28 = Science & Technology. Change to: 22=People&Blogs, 24=Entertainment, 26=HowTo, 27=Education."
       }
     }
   ],
@@ -193,6 +166,10 @@
     "designer": {
       "orphans": []
     },
-    "zone": "us2.make.com"
+    "zone": "eu2.make.com"
+  },
+  "scheduling": {
+    "type": "indefinitely",
+    "interval": 1440
   }
 }
